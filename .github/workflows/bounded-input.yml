@@ -1,0 +1,40 @@
+name: Bounded CLI input
+on:
+  push:
+    branches: [bounded-cli-input]
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libasio-dev libglpk-dev jq
+      - run: make -C src -j2 CXX=g++-14
+      - name: Verify bounded and unbounded inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=docs/example_2.json
+          bytes=$(wc -c < "$fixture")
+          inline=$(cat "$fixture")
+          inline_bytes=$(printf '%s' "$inline" | wc -c)
+          baseline=$(bin/vroom -i "$fixture" | jq '.routes[].steps[]' --sort-keys)
+          diff <(printf '%s\n' "$baseline") <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
+          test "$(bin/vroom --max-input-bytes "$bytes" -i "$fixture" | jq '.code')" = 0
+          test "$(bin/vroom --max-input-bytes "$bytes" < "$fixture" | jq '.code')" = 0
+          test "$(bin/vroom --max-input-bytes "$inline_bytes" "$inline" | jq '.code')" = 0
+          reject() {
+            if "$@" > error.json; then
+              echo "Oversized input unexpectedly accepted"
+              exit 1
+            fi
+            jq -e '.code != 0 and (.error | contains("--max-input-bytes"))' error.json
+          }
+          reject bin/vroom --max-input-bytes "$((bytes - 1))" -i "$fixture"
+          reject bin/vroom --max-input-bytes "$((bytes - 1))" < "$fixture"
+          reject bin/vroom --max-input-bytes "$((inline_bytes - 1))" "$inline"
+          head -c 20000 /dev/zero | tr '\0' ' ' > large.json
+          reject bin/vroom --max-input-bytes 8192 -i large.json
