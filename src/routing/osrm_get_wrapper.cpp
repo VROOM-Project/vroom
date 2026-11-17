@@ -7,12 +7,11 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "routing/osrm_routed_wrapper.h"
+#include "routing/osrm_get_wrapper.h"
 
 namespace vroom::routing {
 
-OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
-                                     const Server& server)
+OsrmGetWrapper::OsrmGetWrapper(const std::string& profile, const Server& server)
   : HttpWrapper(profile,
                 server,
                 "table",
@@ -23,17 +22,16 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                 "straight=false") {
 }
 
-std::string
-OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
-                               const std::string& service) const {
+std::string OsrmGetWrapper::build_query(const std::vector<Location>& locations,
+                                        const std::string& service) const {
 
   return this->build_get_query(std::string{service + "/v1/" + profile + '/'},
                                this->build_query_body(locations, service));
 }
 
 std::string
-OsrmRoutedWrapper::build_query_body(const std::vector<Location>& locations,
-                                    const std::string& service) const {
+OsrmGetWrapper::build_query_body(const std::vector<Location>& locations,
+                                 const std::string& service) const {
   std::string query_body;
   std::string radiuses = "radiuses=";
   radiuses.reserve(radiuses.size() +
@@ -58,9 +56,9 @@ OsrmRoutedWrapper::build_query_body(const std::vector<Location>& locations,
   return query_body;
 }
 
-void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
-                                       const std::vector<Location>& locs,
-                                       const std::string&) const {
+void OsrmGetWrapper::check_response(const rapidjson::Document& json_result,
+                                    const std::vector<Location>& locs,
+                                    const std::string&) const {
   assert(json_result.HasMember("code"));
   const std::string code = json_result["code"].GetString();
   if (code != "Ok") {
@@ -84,7 +82,7 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
 }
 
 const rapidjson::Value&
-OsrmRoutedWrapper::get_legs(const rapidjson::Value& result) const {
+OsrmGetWrapper::get_legs(const rapidjson::Value& result) const {
   assert(result.HasMember("routes") && result["routes"].IsArray() &&
          !result["routes"].Empty() && result["routes"][0].HasMember("legs") &&
          result["routes"][0]["legs"].IsArray());

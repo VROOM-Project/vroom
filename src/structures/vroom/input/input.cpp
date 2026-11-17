@@ -23,8 +23,8 @@ All rights reserved (see LICENSE).
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/ors_wrapper.h"
+#include "routing/osrm_get_wrapper.h"
 #include "routing/osrm_post_routed_wrapper.h"
-#include "routing/osrm_routed_wrapper.h"
 #include "routing/valhalla_wrapper.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
@@ -70,8 +70,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
   case ROUTER::OSRM:
     // Use osrm-routed.
     routing_wrapper =
-      std::make_unique<routing::OsrmRoutedWrapper>(profile,
-                                                   get_server(profile));
+      std::make_unique<routing::OsrmGetWrapper>(profile, get_server(profile));
     break;
   case ROUTER::OSRM_POST:
     // Use osrm-routed with POST requests.

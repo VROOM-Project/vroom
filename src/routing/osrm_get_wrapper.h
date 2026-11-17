@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom::routing {
 
-class OsrmRoutedWrapper : public HttpWrapper {
+class OsrmGetWrapper : public HttpWrapper {
 private:
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
@@ -30,7 +30,7 @@ private:
                                const std::string& service) const;
 
 public:
-  OsrmRoutedWrapper(const std::string& profile, const Server& server);
+  OsrmGetWrapper(const std::string& profile, const Server& server);
 };
 
 } // namespace vroom::routing

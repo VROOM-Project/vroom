@@ -14,7 +14,7 @@ namespace vroom::routing {
 
 OsrmPostRoutedWrapper::OsrmPostRoutedWrapper(const std::string& profile,
                                              const Server& server)
-  : OsrmRoutedWrapper(profile, server) {
+  : OsrmGetWrapper(profile, server) {
 }
 
 std::string
