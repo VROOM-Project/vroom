@@ -16,6 +16,10 @@ namespace vroom::routing {
 
 class OsrmGetWrapper : public OsrmRoutedWrapper {
 private:
+  const std::string _routing_args{
+    "alternatives=false&steps=false&overview="
+    "full&continue_straight=false"};
+
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
 

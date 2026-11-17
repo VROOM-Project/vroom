@@ -18,8 +18,7 @@ OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
                 "matrix",
                 "durations",
                 "distances",
-                "directions",
-                "") {
+                "directions") {
 }
 
 rapidjson::Document

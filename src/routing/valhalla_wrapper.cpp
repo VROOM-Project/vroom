@@ -26,8 +26,7 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                 "sources_to_targets",
                 "sources_to_targets",
                 "sources_to_targets",
-                "route",
-                "") {
+                "route") {
 }
 
 rapidjson::Document ValhallaWrapper::build_matrix_body(

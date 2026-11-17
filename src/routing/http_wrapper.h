@@ -31,15 +31,13 @@ protected:
   const std::string _matrix_durations_key;
   const std::string _matrix_distances_key;
   const std::string _route_service;
-  const std::string _routing_args;
 
   HttpWrapper(const std::string& profile,
               Server server,
               std::string matrix_service,
               std::string matrix_durations_key,
               std::string matrix_distances_key,
-              std::string route_service,
-              std::string routing_args);
+              std::string route_service);
 
   std::string run_query(const std::string& query) const;
 

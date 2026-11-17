@@ -14,7 +14,7 @@ namespace vroom::routing {
 
 OsrmPostWrapper::OsrmPostWrapper(const std::string& profile,
                                  const Server& server)
-  : OsrmRoutedWrapper(profile, server, "") {
+  : OsrmRoutedWrapper(profile, server) {
 }
 
 std::string OsrmPostWrapper::build_query(const std::vector<Location>& locations,

@@ -12,20 +12,13 @@ All rights reserved (see LICENSE).
 namespace vroom::routing {
 
 OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
-                                     const Server& server,
-                                     std::string routing_arguments)
-  : HttpWrapper(profile,
-                server,
-                "table",
-                "durations",
-                "distances",
-                "route",
-                std::move(routing_arguments)) {
+                                     const Server& server)
+  : HttpWrapper(profile, server, "table", "durations", "distances", "route") {
 }
 
 void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
                                        const std::vector<Location>& locs,
-                                       const std::string& service) const {
+                                       const std::string&) const {
   assert(json_result.HasMember("code"));
   const std::string code = json_result["code"].GetString();
   if (code != "Ok") {

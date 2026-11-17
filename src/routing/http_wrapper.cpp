@@ -26,15 +26,13 @@ HttpWrapper::HttpWrapper(const std::string& profile,
                          std::string matrix_service,
                          std::string matrix_durations_key,
                          std::string matrix_distances_key,
-                         std::string route_service,
-                         std::string routing_args)
+                         std::string route_service)
   : Wrapper(profile),
     _server(std::move(server)),
     _matrix_service(std::move(matrix_service)),
     _matrix_durations_key(std::move(matrix_durations_key)),
     _matrix_distances_key(std::move(matrix_distances_key)),
-    _route_service(std::move(route_service)),
-    _routing_args(std::move(routing_args)) {
+    _route_service(std::move(route_service)) {
 }
 
 std::string HttpWrapper::build_post_query(const std::string& path,

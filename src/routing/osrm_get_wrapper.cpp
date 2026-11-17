@@ -12,10 +12,7 @@ All rights reserved (see LICENSE).
 namespace vroom::routing {
 
 OsrmGetWrapper::OsrmGetWrapper(const std::string& profile, const Server& server)
-  : OsrmRoutedWrapper(profile,
-                      server,
-                      std::string{"alternatives=false&steps=false&overview="
-                                  "full&continue_straight=false"}) {
+  : OsrmRoutedWrapper(profile, server) {
 }
 
 std::string OsrmGetWrapper::build_query(const std::vector<Location>& locations,
