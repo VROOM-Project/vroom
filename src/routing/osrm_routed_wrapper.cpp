@@ -1,4 +1,13 @@
-#include "osrm_routed_wrapper.h"
+/*
+
+This file is part of VROOM.
+
+Copyright (c) 2015-2025, Julien Coupey.
+All rights reserved (see LICENSE).
+
+*/
+
+#include "routing/osrm_routed_wrapper.h"
 
 namespace vroom::routing {
 
