@@ -11,6 +11,10 @@
 
 ### Changed
 
+#### Refactoring
+
+- Added an `OsrmRoutedWrapper` class that groups together the features common to other types of OSRM wrappers (#1373)
+- Refactored the `ORS` and `Valhalla` wrappers, which previously built JSON natively using strings. Now, JSON is built using RapidJSON and then converted to a string. (#1373)
 
 ### Fixed
 
@@ -143,7 +147,7 @@
 - Improved `vrptw::PDShift` implementation (#852)
 - Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
 - Account for vehicle/job compatibility in heuristic regrets values (#982)
-- Slightly reduce computing times for SWAP* operator (#987)
+- Slightly reduce computing times for SWAP\* operator (#987)
 - Refactor `RouteSplit` operator (#996)
 
 #### Internals
@@ -259,7 +263,7 @@
 - CI builds now run against `libosrm` v5.26.0 (#651)
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
 - Change Input and parser signature to simplify downstream usage (#665)
-- Consider move options in SWAP* that were previously wrongly discarded (#682)
+- Consider move options in SWAP\* that were previously wrongly discarded (#682)
 - Use cxxopts as command line parser instead of getopt (#602)
 - Change polylineencoder usage to submodule instead of plain header (#686)
 
@@ -279,7 +283,7 @@
 - `max_tasks` key limiting route size at vehicle level (#421, #566)
 - Support for custom cost matrices (#415)
 - Number of routes in solution summary (#524)
-- Implementation for extended SWAP* local search operator (#507)
+- Implementation for extended SWAP\* local search operator (#507)
 - `-l` command-line flag for user-provided timeout (#594)
 - Ability to start the search from user-defined solution (#376)
 - Github Actions CI (#436)
@@ -521,11 +525,11 @@
 - Support for user-defined matrices (#47)
 - New flag `-x` to set the trade-off between computing time and exploration depth (#131)
 - Provide ETA at step level in the routes, using optional service time for each job (#101, #103)
-- Experimental* support to use `vroom` directly from C++ as a library (#42)
+- Experimental\* support to use `vroom` directly from C++ as a library (#42)
 - Automatic code formatting script based on `clang-format` (#66)
 - PR template
 
-*: read "functional with no C++ API stability guarantee"
+\*: read "functional with no C++ API stability guarantee"
 
 ### Changed
 
@@ -570,7 +574,7 @@
 
 ### Added
 
-- Support for OSRM v5.*
+- Support for OSRM v5.\*
 - Dedicated folder for API documentation
 
 ### Changed
@@ -580,7 +584,7 @@
 
 ### Removed
 
-- Drop support for OSRM v4.*
+- Drop support for OSRM v4.\*
 - Flags `-s` and `-e` (see new API)
 
 ### Fixed
@@ -611,7 +615,7 @@
 - New local search operator to improve results in specific asymmetric
   context (e.g. many locations in a dense urban area with lots of
   one-way streets).
-- OSRM v4.9.* compatibility.
+- OSRM v4.9.\* compatibility.
 - Use rapidjson for json i/o (#19)
 - Append the `tour` key to the solution in any case.
 
@@ -670,4 +674,3 @@
   solution and execution details.
 - Optional ready-to-use detailed route.
 - Optional use of euclidean distance for matrix computation.
-
