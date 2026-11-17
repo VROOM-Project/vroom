@@ -18,6 +18,9 @@ All rights reserved (see LICENSE).
 namespace vroom::routing {
 
 class HttpWrapper : public Wrapper {
+protected:
+  static constexpr int COORDINATES_PRECISION = 6;
+
 private:
   std::string send_then_receive(const std::string& query) const;
 
