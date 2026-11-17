@@ -7,24 +7,25 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "routing/osrm_post_routed_wrapper.h"
+#include "routing/osrm_post_wrapper.h"
 #include "utils/output_json.h"
 
 namespace vroom::routing {
 
-OsrmPostRoutedWrapper::OsrmPostRoutedWrapper(const std::string& profile,
-                                             const Server& server)
+OsrmPostWrapper::OsrmPostWrapper(const std::string& profile,
+                                 const Server& server)
   : OsrmRoutedWrapper(profile, server) {
 }
 
-std::string
-OsrmPostRoutedWrapper::build_query(const std::vector<Location>& locations,
-                                   const std::string& service) const {
-  return build_post_query(service + "/v1/" + profile,
-                          build_request_body(locations, service));
+std::string OsrmPostWrapper::build_query(const std::vector<Location>& locations,
+                                         const std::string& service) const {
+  return build_post_query(
+    service + "/v1/" + profile,
+    io::json_to_string(build_request_rapidjson_body(locations, service),
+                       COORDINATES_PRECISION));
 }
 
-std::string OsrmPostRoutedWrapper::build_request_body(
+rapidjson::Document OsrmPostWrapper::build_request_rapidjson_body(
   const std::vector<Location>& locations,
   const std::string& service) const {
   rapidjson::Document body;
@@ -53,7 +54,7 @@ std::string OsrmPostRoutedWrapper::build_request_body(
     annotations.PushBack("distance", allocator);
     body.AddMember("annotations", annotations, allocator);
   }
-  return io::json_to_string(body);
+  return body;
 }
 
 } // namespace vroom::routing

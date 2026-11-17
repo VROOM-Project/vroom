@@ -18,6 +18,9 @@ All rights reserved (see LICENSE).
 namespace vroom::routing {
 
 class HttpWrapper : public Wrapper {
+protected:
+  static constexpr int COORDINATES_PRECISION = 6;
+
 private:
   std::string send_then_receive(const std::string& query) const;
 
@@ -31,20 +34,21 @@ protected:
   const std::string _matrix_durations_key;
   const std::string _matrix_distances_key;
   const std::string _route_service;
-  const std::string _routing_args;
 
   HttpWrapper(const std::string& profile,
               Server server,
               std::string matrix_service,
               std::string matrix_durations_key,
               std::string matrix_distances_key,
-              std::string route_service,
-              std::string routing_args);
+              std::string route_service);
 
   std::string run_query(const std::string& query) const;
 
   std::string build_post_query(const std::string& path,
                                const std::string& body) const;
+
+  std::string build_get_query(const std::string& path,
+                              const std::string& body) const;
 
   static void parse_response(rapidjson::Document& json_result,
                              const std::string& json_content);

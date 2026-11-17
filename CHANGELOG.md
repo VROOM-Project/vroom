@@ -11,6 +11,10 @@
 
 ### Changed
 
+#### Refactoring
+
+- Added an `OsrmRoutedWrapper` class that groups together the features common to other types of OSRM wrappers (#1373)
+- Refactored the `ORS` and `Valhalla` wrappers, which previously built JSON natively using strings. Now, JSON is built using RapidJSON and then converted to a string. (#1373)
 
 ### Fixed
 

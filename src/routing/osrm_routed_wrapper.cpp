@@ -13,53 +13,7 @@ namespace vroom::routing {
 
 OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                                      const Server& server)
-  : HttpWrapper(profile,
-                server,
-                "table",
-                "durations",
-                "distances",
-                "route",
-                "alternatives=false&steps=false&overview=full&continue_"
-                "straight=false") {
-}
-
-std::string
-OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
-                               const std::string& service) const {
-  // Building query for osrm-routed
-  std::string query = "GET /" + _server.path + service;
-
-  query += "/v1/" + profile + "/";
-
-  // Build query part for snapping restriction.
-  std::string radiuses = "radiuses=";
-  radiuses.reserve(radiuses.size() +
-                   locations.size() *
-                     (DEFAULT_OSRM_SNAPPING_RADIUS.size() + 1));
-
-  // Adding locations and radiuses values.
-  for (auto const& location : locations) {
-    query += std::format("{:.6f},{:.6f};", location.lon(), location.lat());
-    radiuses += DEFAULT_OSRM_SNAPPING_RADIUS + ";";
-  }
-  // Remove trailing ';'.
-  query.pop_back();
-  radiuses.pop_back();
-
-  if (service == _route_service) {
-    query += "?" + _routing_args;
-  } else {
-    assert(service == _matrix_service);
-    query += "?annotations=duration,distance";
-  }
-  query += "&" + radiuses;
-
-  query += " HTTP/1.1\r\n";
-  query += "Host: " + _server.host + "\r\n";
-  query += "Accept: */*\r\n";
-  query += "Connection: close\r\n\r\n";
-
-  return query;
+  : HttpWrapper(profile, server, "table", "durations", "distances", "route") {
 }
 
 void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
@@ -95,5 +49,4 @@ OsrmRoutedWrapper::get_legs(const rapidjson::Value& result) const {
 
   return result["routes"][0]["legs"];
 }
-
 } // namespace vroom::routing

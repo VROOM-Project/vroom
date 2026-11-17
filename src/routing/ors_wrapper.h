@@ -26,6 +26,9 @@ private:
   const rapidjson::Value&
   get_legs(const rapidjson::Value& result) const override;
 
+  rapidjson::Document build_request_body(const std::vector<Location>& locations,
+                                         const std::string& service) const;
+
 public:
   OrsWrapper(const std::string& profile, const Server& server);
 };
