@@ -16,9 +16,12 @@ namespace vroom::routing {
 
 class ValhallaWrapper : public HttpWrapper {
 private:
-  std::string get_matrix_query(const std::vector<Location>& locations) const;
+  // Empty sources or destinations means using all locations.
+  rapidjson::Document
+  build_matrix_body(const std::vector<Location>& locations) const;
 
-  std::string get_route_query(const std::vector<Location>& locations) const;
+  rapidjson::Document
+  build_route_body(const std::vector<Location>& locations) const;
 
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;

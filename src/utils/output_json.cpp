@@ -378,9 +378,11 @@ rapidjson::Value to_json(const Location& loc,
   return json_coords;
 }
 
-std::string json_to_string(const rapidjson::Document& docs) {
+std::string json_to_string(const rapidjson::Document& docs,
+                           int max_decimal_places) {
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  writer.SetMaxDecimalPlaces(max_decimal_places);
   docs.Accept(writer);
   return std::string(buffer.GetString(), buffer.GetSize());
 }

@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/valhalla_wrapper.h"
 #include "utils/helpers.h"
+#include "utils/output_json.h"
 
 namespace vroom::routing {
 
@@ -25,67 +26,69 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                 "sources_to_targets",
                 "sources_to_targets",
                 "sources_to_targets",
-                "route",
-                R"("directions_type":"none")") {
+                "route") {
 }
 
-std::string ValhallaWrapper::get_matrix_query(
+rapidjson::Document ValhallaWrapper::build_matrix_body(
   const std::vector<Location>& locations) const {
-  // Building matrix query for Valhalla.
-  std::string query = "GET /" + _server.path + _matrix_service + "?json=";
+  rapidjson::Document body;
+  body.SetObject();
+  auto& allocator = body.GetAllocator();
+  auto to_json = [&](const Location& location) {
+    rapidjson::Value j_location(rapidjson::kObjectType);
+    j_location.AddMember("lon", location.lon(), allocator);
+    j_location.AddMember("lat", location.lat(), allocator);
+    return j_location;
+  };
 
-  // List locations.
-  std::string all_locations;
-  for (auto const& location : locations) {
-    all_locations += std::format(R"({{"lon":{:.6f},"lat":{:.6f}}},)",
-                                 location.lon(),
-                                 location.lat());
-  }
-  all_locations.pop_back(); // Remove trailing ','.
+  auto build_locations = [&](const std::vector<Location>& locations) {
+    rapidjson::Value j_locations(rapidjson::kArrayType);
+    for (const Location& location : locations) {
+      j_locations.PushBack(to_json(location), allocator);
+    }
 
-  query += "{\"sources\":[" + all_locations;
-  query += "],\"targets\":[" + all_locations;
-  query += R"(],"costing":")" + profile + "\"}";
-
-  query += " HTTP/1.1\r\n";
-  query += "Host: " + _server.host + "\r\n";
-  query += "Accept: */*\r\n";
-  query += "Connection: Close\r\n\r\n";
-
-  return query;
+    return j_locations;
+  };
+  body.AddMember("sources", build_locations(locations), allocator);
+  body.AddMember("targets", build_locations(locations), allocator);
+  body.AddMember("costing",
+                 rapidjson::Value(profile.c_str(), allocator),
+                 allocator);
+  return body;
 }
 
-std::string
-ValhallaWrapper::get_route_query(const std::vector<Location>& locations) const {
-  // Building route query for Valhalla.
-  std::string query =
-    "GET /" + _server.path + _route_service + "?json={\"locations\":[";
+rapidjson::Document ValhallaWrapper::build_route_body(
+  const std::vector<Location>& locations) const {
+  rapidjson::Document body;
+  body.SetObject();
+  auto& allocator = body.GetAllocator();
 
-  for (auto const& location : locations) {
-    query += std::format(R"({{"lon":{:.6f},"lat":{:.6f},"type":"break"}},)",
-                         location.lon(),
-                         location.lat());
+  rapidjson::Value j_locations(rapidjson::kArrayType);
+  for (const auto& location : locations) {
+    rapidjson::Value j_location(rapidjson::kObjectType);
+    j_location.AddMember("lon", location.lon(), allocator);
+    j_location.AddMember("lat", location.lat(), allocator);
+    j_location.AddMember("type", "break", allocator);
+    j_locations.PushBack(j_location, allocator);
   }
-  query.pop_back(); // Remove trailing ','.
 
-  query += R"(],"costing":")" + profile + "\"";
-  query += "," + _routing_args;
-  query += "}";
+  body.AddMember("locations", j_locations, allocator);
+  body.AddMember("costing",
+                 rapidjson::Value(profile.c_str(), allocator),
+                 allocator);
+  body.AddMember("directions_type", "none", allocator);
 
-  query += " HTTP/1.1\r\n";
-  query += "Host: " + _server.host + "\r\n";
-  query += "Accept: */*\r\n";
-  query += "Connection: Close\r\n\r\n";
-
-  return query;
+  return body;
 }
 
 std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
                                          const std::string& service) const {
   assert(service == _matrix_service || service == _route_service);
-
-  return (service == _matrix_service) ? get_matrix_query(locations)
-                                      : get_route_query(locations);
+  const rapidjson::Document body = (service == _matrix_service)
+                                     ? build_matrix_body(locations)
+                                     : build_route_body(locations);
+  return build_get_query(service + "?json=",
+                         io::json_to_string(body, COORDINATES_PRECISION));
 }
 
 void ValhallaWrapper::check_response(const rapidjson::Document& json_result,

@@ -26,15 +26,13 @@ HttpWrapper::HttpWrapper(const std::string& profile,
                          std::string matrix_service,
                          std::string matrix_durations_key,
                          std::string matrix_distances_key,
-                         std::string route_service,
-                         std::string routing_args)
+                         std::string route_service)
   : Wrapper(profile),
     _server(std::move(server)),
     _matrix_service(std::move(matrix_service)),
     _matrix_durations_key(std::move(matrix_durations_key)),
     _matrix_distances_key(std::move(matrix_distances_key)),
-    _route_service(std::move(route_service)),
-    _routing_args(std::move(routing_args)) {
+    _route_service(std::move(route_service)) {
 }
 
 std::string HttpWrapper::build_post_query(const std::string& path,
@@ -46,7 +44,17 @@ std::string HttpWrapper::build_post_query(const std::string& path,
   query += "Host: " + _server.host + ":" + _server.port + "\r\n";
   query += "Connection: close\r\n";
   query += "\r\n" + body;
+  return query;
+}
 
+std::string HttpWrapper::build_get_query(const std::string& path,
+                                         const std::string& body) const {
+  std::string query = "GET /" + _server.path + path;
+  query += body;
+  query += " HTTP/1.1\r\n";
+  query += "Host: " + _server.host + "\r\n";
+  query += "Accept: */*\r\n";
+  query += "Connection: close\r\n\r\n";
   return query;
 }
 
