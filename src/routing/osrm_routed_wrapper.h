@@ -26,6 +26,9 @@ private:
   const rapidjson::Value&
   get_legs(const rapidjson::Value& result) const override;
 
+  std::string build_query_body(const std::vector<Location>& locations,
+                               const std::string& service) const;
+
 public:
   OsrmRoutedWrapper(const std::string& profile, const Server& server);
 };

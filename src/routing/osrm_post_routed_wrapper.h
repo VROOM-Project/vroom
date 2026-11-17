@@ -19,8 +19,9 @@ private:
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
 
-  std::string build_request_body(const std::vector<Location>& locations,
-                                 const std::string& service) const;
+  rapidjson::Document
+  build_request_rapidjson_body(const std::vector<Location>& locations,
+                               const std::string& service) const;
 
 public:
   OsrmPostRoutedWrapper(const std::string& profile, const Server& server);

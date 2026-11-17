@@ -20,11 +20,13 @@ OsrmPostRoutedWrapper::OsrmPostRoutedWrapper(const std::string& profile,
 std::string
 OsrmPostRoutedWrapper::build_query(const std::vector<Location>& locations,
                                    const std::string& service) const {
-  return build_post_query(service + "/v1/" + profile,
-                          build_request_body(locations, service));
+  return build_post_query(
+    service + "/v1/" + profile,
+    io::json_to_string(build_request_rapidjson_body(locations, service),
+                       COORDINATES_PRECISION));
 }
 
-std::string OsrmPostRoutedWrapper::build_request_body(
+rapidjson::Document OsrmPostRoutedWrapper::build_request_rapidjson_body(
   const std::vector<Location>& locations,
   const std::string& service) const {
   rapidjson::Document body;
@@ -53,7 +55,7 @@ std::string OsrmPostRoutedWrapper::build_request_body(
     annotations.PushBack("distance", allocator);
     body.AddMember("annotations", annotations, allocator);
   }
-  return io::json_to_string(body);
+  return body;
 }
 
 } // namespace vroom::routing

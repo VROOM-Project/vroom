@@ -26,40 +26,36 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
 std::string
 OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
                                const std::string& service) const {
-  // Building query for osrm-routed
-  std::string query = "GET /" + _server.path + service;
 
-  query += "/v1/" + profile + "/";
+  return this->build_get_query(std::string{service + "/v1/" + profile + '/'},
+                               this->build_query_body(locations, service));
+}
 
-  // Build query part for snapping restriction.
+std::string
+OsrmRoutedWrapper::build_query_body(const std::vector<Location>& locations,
+                                    const std::string& service) const {
+  std::string query_body;
   std::string radiuses = "radiuses=";
   radiuses.reserve(radiuses.size() +
                    locations.size() *
                      (DEFAULT_OSRM_SNAPPING_RADIUS.size() + 1));
 
   // Adding locations and radiuses values.
-  for (auto const& location : locations) {
-    query += std::format("{:.6f},{:.6f};", location.lon(), location.lat());
-    radiuses += DEFAULT_OSRM_SNAPPING_RADIUS + ";";
+  for (const Location& location : locations) {
+    query_body += std::format("{:.6f},{:.6f};", location.lon(), location.lat());
+    radiuses += DEFAULT_OSRM_SNAPPING_RADIUS + ';';
   }
-  // Remove trailing ';'.
-  query.pop_back();
+  query_body.pop_back();
   radiuses.pop_back();
 
   if (service == _route_service) {
-    query += "?" + _routing_args;
+    query_body += "?" + _routing_args;
   } else {
     assert(service == _matrix_service);
-    query += "?annotations=duration,distance";
+    query_body += "?annotations=duration,distance";
   }
-  query += "&" + radiuses;
-
-  query += " HTTP/1.1\r\n";
-  query += "Host: " + _server.host + "\r\n";
-  query += "Accept: */*\r\n";
-  query += "Connection: close\r\n\r\n";
-
-  return query;
+  query_body += "&" + radiuses;
+  return query_body;
 }
 
 void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
