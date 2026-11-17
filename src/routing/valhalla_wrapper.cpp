@@ -30,9 +30,7 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
 }
 
 rapidjson::Document ValhallaWrapper::build_matrix_body(
-  const std::vector<Location>& locations,
-  const std::vector<std::size_t>& sources,
-  const std::vector<std::size_t>& destinations) const {
+  const std::vector<Location>& locations) const {
   rapidjson::Document body;
   body.SetObject();
   auto& allocator = body.GetAllocator();
@@ -43,24 +41,16 @@ rapidjson::Document ValhallaWrapper::build_matrix_body(
     return j_location;
   };
 
-  // An empty indices vector means using all locations.
-  auto build_locations = [&](const std::vector<std::size_t>& indices) {
+  auto build_locations = [&](const std::vector<Location>& locations) {
     rapidjson::Value j_locations(rapidjson::kArrayType);
-    if (indices.empty()) {
-      for (const auto& location : locations) {
-        j_locations.PushBack(to_json(location), allocator);
-      }
-    } else {
-      for (const std::size_t i : indices) {
-        assert(i < locations.size());
-        j_locations.PushBack(to_json(locations[i]), allocator);
-      }
+    for (const Location& location : locations) {
+      j_locations.PushBack(to_json(location), allocator);
     }
+
     return j_locations;
   };
-
-  body.AddMember("sources", build_locations(sources), allocator);
-  body.AddMember("targets", build_locations(destinations), allocator);
+  body.AddMember("sources", build_locations(locations), allocator);
+  body.AddMember("targets", build_locations(locations), allocator);
   body.AddMember("costing",
                  rapidjson::Value(profile.c_str(), allocator),
                  allocator);
@@ -95,7 +85,7 @@ std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
                                          const std::string& service) const {
   assert(service == _matrix_service || service == _route_service);
   const rapidjson::Document body = (service == _matrix_service)
-                                     ? build_matrix_body(locations, {}, {})
+                                     ? build_matrix_body(locations)
                                      : build_route_body(locations);
   return build_get_query(service + "?json=",
                          io::json_to_string(body, COORDINATES_PRECISION));

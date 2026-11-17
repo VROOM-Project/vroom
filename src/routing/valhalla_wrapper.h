@@ -18,9 +18,7 @@ class ValhallaWrapper : public HttpWrapper {
 private:
   // Empty sources or destinations means using all locations.
   rapidjson::Document
-  build_matrix_body(const std::vector<Location>& locations,
-                    const std::vector<std::size_t>& sources,
-                    const std::vector<std::size_t>& destinations) const;
+  build_matrix_body(const std::vector<Location>& locations) const;
 
   rapidjson::Document
   build_route_body(const std::vector<Location>& locations) const;
