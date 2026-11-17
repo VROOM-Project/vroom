@@ -11,6 +11,8 @@ All rights reserved (see LICENSE).
 */
 
 #include "../include/rapidjson/include/rapidjson/document.h"
+#include "../include/rapidjson/include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/include/rapidjson/writer.h"
 #include "structures/vroom/solution/solution.h"
 #include "utils/exception.h"
 
@@ -38,7 +40,11 @@ rapidjson::Value to_json(const Step& s,
 rapidjson::Value to_json(const Location& loc,
                          rapidjson::Document::AllocatorType& allocator);
 
-std::string json_to_string(const rapidjson::Document& docs);
+// Doubles are truncated to max_decimal_places (no limit by default).
+std::string json_to_string(
+  const rapidjson::Document& docs,
+  int max_decimal_places =
+    rapidjson::Writer<rapidjson::StringBuffer>::kDefaultMaxDecimalPlaces);
 
 void write_to_json(const vroom::Exception& e,
                    const std::string& output_file = "");

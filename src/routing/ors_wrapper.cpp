@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "routing/ors_wrapper.h"
+#include "utils/output_json.h"
 
 namespace vroom::routing {
 
@@ -18,33 +19,44 @@ OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
                 "durations",
                 "distances",
                 "directions",
-                R"("geometry_simplify":"false","continue_straight":"false")") {
+                "") {
+}
+
+rapidjson::Document
+OrsWrapper::build_request_body(const std::vector<Location>& locations,
+                               const std::string& service) const {
+  rapidjson::Document body;
+  body.SetObject();
+  auto& allocator = body.GetAllocator();
+  rapidjson::Value coordinates(rapidjson::kArrayType);
+  for (const auto& location : locations) {
+    rapidjson::Value coord(rapidjson::kArrayType);
+    coord.PushBack(location.lon(), allocator);
+    coord.PushBack(location.lat(), allocator);
+    coordinates.PushBack(coord, allocator);
+  }
+
+  if (service == _route_service) {
+    body.AddMember("coordinates", coordinates, allocator);
+    body.AddMember("geometry_simplify", "false", allocator);
+    body.AddMember("continue_straight", "false", allocator);
+  } else {
+    assert(service == _matrix_service);
+    body.AddMember("locations", coordinates, allocator);
+    rapidjson::Value metrics(rapidjson::kArrayType);
+    metrics.PushBack("duration", allocator);
+    metrics.PushBack("distance", allocator);
+    body.AddMember("metrics", metrics, allocator);
+  }
+  return body;
 }
 
 std::string OrsWrapper::build_query(const std::vector<Location>& locations,
                                     const std::string& service) const {
-  // Adding locations.
-  std::string body = "{\"";
-  if (service == "directions") {
-    body += "coordinates";
-  } else {
-    body += "locations";
-  }
-  body += "\":[";
-  for (auto const& location : locations) {
-    body += std::format("[{:.6f},{:.6f}],", location.lon(), location.lat());
-  }
-  body.pop_back(); // Remove trailing ','.
-  body += "]";
-  if (service == _route_service) {
-    body += "," + _routing_args;
-  } else {
-    assert(service == _matrix_service);
-    body += R"(,"metrics":["duration","distance"])";
-  }
-  body += "}";
-
-  return build_post_query(service + "/" + profile, body);
+  return build_post_query(service + "/" + profile,
+                          io::json_to_string(build_request_body(locations,
+                                                                service),
+                                             COORDINATES_PRECISION));
 }
 
 void OrsWrapper::check_response(const rapidjson::Document& json_result,
