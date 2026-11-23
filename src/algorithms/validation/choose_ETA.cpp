@@ -251,15 +251,16 @@ Route choose_ETA(const Input& input,
   std::vector<Duration> horizon_end_delays(steps.size(), 0);
   std::vector<bool> step_has_TW(steps.size(), false);
   auto earliest_date = start_candidate;
-  Duration break_waiting = 0;
+  Duration sample_break_travel_margin = 0;
   Index leg_rank = 0;
   for (unsigned s = 0; s < steps.size(); ++s) {
     const auto& step = steps[s];
     if (s > 0) {
       earliest_date += (relative_ETA[s] - relative_ETA[s - 1]);
       if (step.type != STEP_TYPE::BREAK) {
-        earliest_date -= std::min(break_waiting, evals[leg_rank].duration);
-        break_waiting = 0;
+        earliest_date -=
+          std::min(sample_break_travel_margin, evals[leg_rank].duration);
+        sample_break_travel_margin = 0;
         ++leg_rank;
       }
     }
@@ -272,7 +273,9 @@ Route choose_ETA(const Input& input,
         std::max(earliest_date, step.forced_service.after.value());
     }
     if (step.type == STEP_TYPE::BREAK) {
-      break_waiting += earliest_date - date_before_forced_service;
+      // User-provided constraints gives margin for travel before
+      // this break.
+      sample_break_travel_margin += earliest_date - date_before_forced_service;
     }
     if (earliest_date > latest_dates[s]) {
       throw InputException(
@@ -415,6 +418,7 @@ Route choose_ETA(const Input& input,
   Duration previous_travel = evals.front().duration;
   std::vector<unsigned> first_relevant_tw_rank;
   Index rank_in_J = 0;
+  Duration break_travel_margin_LB = 0;
 
   t_i_LB.reserve(steps.size());
   t_i_UB.reserve(steps.size());
@@ -452,24 +456,37 @@ Route choose_ETA(const Input& input,
       ++rank_in_J;
       break;
     case JOB: {
-      LB = std::max(LB, previous_LB + previous_action + previous_travel);
+      const auto travel = (break_travel_margin_LB < previous_travel)
+                            ? previous_travel - break_travel_margin_LB
+                            : 0;
+      LB = std::max(LB, previous_LB + previous_action + travel);
       previous_LB = LB;
       previous_action = action_times[rank_in_J];
       previous_travel = evals[rank_in_J].duration;
       ++rank_in_J;
+      break_travel_margin_LB = 0;
       break;
     }
     case BREAK: {
-      LB = std::max(LB, previous_LB + previous_action);
-      previous_travel -=
-        std::min(previous_travel, LB - (previous_LB + previous_action));
+      const auto candidate = previous_LB + previous_action;
+      if (candidate < LB) {
+        // User-provided constraints gives margin for travel before
+        // this break.
+        break_travel_margin_LB += (LB - candidate);
+      } else {
+        LB = candidate;
+      }
       previous_LB = LB;
       previous_action = v.breaks[step.rank].service;
       break;
     }
-    case END:
-      LB = std::max(LB, previous_LB + previous_action + previous_travel);
+    case END: {
+      const auto travel = (break_travel_margin_LB < previous_travel)
+                            ? previous_travel - break_travel_margin_LB
+                            : 0;
+      LB = std::max(LB, previous_LB + previous_action + travel);
       break;
+    }
     }
     t_i_LB.push_back(LB);
     t_i_UB.push_back(UB);
