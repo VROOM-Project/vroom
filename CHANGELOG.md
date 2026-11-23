@@ -22,6 +22,7 @@
 
 - Segfault with geometry request with plan mode and user-defined matrices (#1334)
 - Out-of-bounds read in `PriorityReplace` (#1348)
+- Travel counted twice after a waiting break with forced service in plan mode (#1326)
 
 #### Internals
 
