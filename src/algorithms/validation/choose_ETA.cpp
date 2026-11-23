@@ -251,17 +251,28 @@ Route choose_ETA(const Input& input,
   std::vector<Duration> horizon_end_delays(steps.size(), 0);
   std::vector<bool> step_has_TW(steps.size(), false);
   auto earliest_date = start_candidate;
+  Duration break_waiting = 0;
+  Index leg_rank = 0;
   for (unsigned s = 0; s < steps.size(); ++s) {
     const auto& step = steps[s];
     if (s > 0) {
       earliest_date += (relative_ETA[s] - relative_ETA[s - 1]);
+      if (step.type != STEP_TYPE::BREAK) {
+        earliest_date -= std::min(break_waiting, evals[leg_rank].duration);
+        break_waiting = 0;
+        ++leg_rank;
+      }
     }
+    const auto date_before_forced_service = earliest_date;
     if (step.forced_service.at.has_value()) {
       earliest_date = std::max(earliest_date, step.forced_service.at.value());
     }
     if (step.forced_service.after.has_value()) {
       earliest_date =
         std::max(earliest_date, step.forced_service.after.value());
+    }
+    if (step.type == STEP_TYPE::BREAK) {
+      break_waiting += earliest_date - date_before_forced_service;
     }
     if (earliest_date > latest_dates[s]) {
       throw InputException(
@@ -450,6 +461,8 @@ Route choose_ETA(const Input& input,
     }
     case BREAK: {
       LB = std::max(LB, previous_LB + previous_action);
+      previous_travel -=
+        std::min(previous_travel, LB - (previous_LB + previous_action));
       previous_LB = LB;
       previous_action = v.breaks[step.rank].service;
       break;
