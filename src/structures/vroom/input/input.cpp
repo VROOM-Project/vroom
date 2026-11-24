@@ -361,13 +361,17 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       _all_locations_have_coords && end_loc.has_coordinates();
   }
 
-  // Ensure that location index are either always or never provided.
-  if (_no_addition_yet) {
-    _no_addition_yet = false;
-    _has_custom_location_index = has_location_index;
-  } else {
-    if (_has_custom_location_index != has_location_index) {
-      throw InputException("Missing location index.");
+  // Ensure that location index are either always or never
+  // provided. A vehicle with no start and no end has no location so
+  // it does not take part in this check.
+  if (!current_v.virtual_ends) {
+    if (_no_addition_yet) {
+      _no_addition_yet = false;
+      _has_custom_location_index = has_location_index;
+    } else {
+      if (_has_custom_location_index != has_location_index) {
+        throw InputException("Missing location index.");
+      }
     }
   }
 
@@ -1200,6 +1204,100 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
   if (ep != nullptr) {
     std::rethrow_exception(ep);
   }
+
+  add_virtual_location();
+}
+
+namespace {
+template <class T> void grow_matrix(Matrix<T>& m, std::size_t new_size) {
+  assert(m.size() <= new_size);
+  Matrix<T> grown(new_size, 0);
+  for (std::size_t i = 0; i < m.size(); ++i) {
+    for (std::size_t j = 0; j < m.size(); ++j) {
+      grown[i][j] = m[i][j];
+    }
+  }
+  m = std::move(grown);
+}
+} // namespace
+
+void Input::add_virtual_location() {
+  if (std::ranges::none_of(vehicles,
+                           [](const auto& v) { return v.virtual_ends; })) {
+    return;
+  }
+
+  // Use an index past the end of every matrix so it never clashes
+  // with a real location.
+  std::size_t virtual_index = 0;
+  for (const auto& [profile, m] : _durations_matrices) {
+    virtual_index = std::max(virtual_index, m.size());
+  }
+  for (const auto& [profile, m] : _distances_matrices) {
+    virtual_index = std::max(virtual_index, m.size());
+  }
+  for (const auto& [profile, m] : _costs_matrices) {
+    virtual_index = std::max(virtual_index, m.size());
+  }
+
+  // Added row and column are filled with zeros: travelling to or
+  // from the virtual location is free.
+  const std::size_t new_size = virtual_index + 1;
+  for (auto& [profile, m] : _durations_matrices) {
+    grow_matrix(m, new_size);
+  }
+  for (auto& [profile, m] : _distances_matrices) {
+    grow_matrix(m, new_size);
+  }
+  for (auto& [profile, m] : _costs_matrices) {
+    grow_matrix(m, new_size);
+  }
+
+  const Location virtual_loc(static_cast<Index>(virtual_index));
+  for (auto& v : vehicles) {
+    if (v.virtual_ends) {
+      v.start = virtual_loc;
+      v.end = virtual_loc;
+    }
+  }
+}
+
+void Input::relocate_virtual_ends(Solution& sol) const {
+  std::unordered_set<Id> virtual_vehicles;
+  for (const auto& v : vehicles) {
+    if (v.virtual_ends) {
+      virtual_vehicles.insert(v.id);
+    }
+  }
+  if (virtual_vehicles.empty()) {
+    return;
+  }
+
+  const auto is_task = [](const Step& s) {
+    return s.step_type == STEP_TYPE::JOB && s.location.has_value();
+  };
+
+  for (auto& route : sol.routes) {
+    if (!virtual_vehicles.contains(route.vehicle)) {
+      continue;
+    }
+    auto& steps = route.steps;
+    assert(steps.front().step_type == STEP_TYPE::START &&
+           steps.back().step_type == STEP_TYPE::END);
+
+    const auto first_task = std::ranges::find_if(steps, is_task);
+    if (first_task == steps.end()) {
+      // No task in route, e.g. only breaks in plan mode.
+      steps.front().location.reset();
+      steps.back().location.reset();
+      continue;
+    }
+    const auto last_task = std::ranges::find_if(steps.rbegin(),
+                                                steps.rend(),
+                                                is_task);
+    steps.front().location = first_task->location;
+    steps.back().location = last_task->location;
+  }
 }
 
 std::unique_ptr<VRP> Input::get_problem() const {
@@ -1263,6 +1361,8 @@ Solution Input::solve(const unsigned nb_searches,
 
   // Solve.
   auto sol = instance->solve(nb_searches, depth, nb_thread, solve_time);
+
+  relocate_virtual_ends(sol);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading.count();
@@ -1350,6 +1450,8 @@ Solution Input::check(unsigned nb_thread) {
   std::unordered_map<Index, Index> route_rank_to_v_rank;
   auto sol =
     validation::check_and_set_ETA(*this, nb_thread, route_rank_to_v_rank);
+
+  relocate_virtual_ends(sol);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;

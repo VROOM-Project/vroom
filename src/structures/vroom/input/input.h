@@ -121,6 +121,14 @@ private:
 
   void set_matrices(unsigned nb_thread, bool sparse_filling = false);
 
+  // Add a zero-cost virtual location to all matrices and use it as
+  // start and end for vehicles with neither start nor end.
+  void add_virtual_location();
+
+  // Move start/end steps of routes for vehicles with virtual ends to
+  // their first/last task location.
+  void relocate_virtual_ends(Solution& sol) const;
+
   const Server& get_server(const std::string& profile) const;
 
   void add_routing_wrapper(const std::string& profile);

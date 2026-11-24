@@ -53,10 +53,11 @@ Vehicle::Vehicle(Id id,
                                              return b.max_load.has_value();
                                            })),
     type_str(std::move(type_str)) {
-  if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
-    throw InputException(
-      std::format("No start or end specified for vehicle {}.", id));
-  }
+  // A vehicle with neither start nor end is allowed: its route is
+  // free to begin at its first task and finish at its last task. It
+  // is internally anchored to a zero-cost virtual location, see
+  // Input::add_virtual_location.
+  virtual_ends = !static_cast<bool>(start) && !static_cast<bool>(end);
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];

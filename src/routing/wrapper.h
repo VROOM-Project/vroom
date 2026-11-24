@@ -68,8 +68,7 @@ public:
             route_locs.push_back(v.end.value());
           }
 
-          if (has_job_steps) {
-            assert(route_locs.size() >= 2);
+          if (has_job_steps && route_locs.size() >= 2) {
 
             this->update_sparse_matrix(route_locs,
                                        m,

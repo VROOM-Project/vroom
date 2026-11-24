@@ -6,6 +6,7 @@
 
 #### Features
 
+- Allow vehicles with neither `start` nor `end`
 - No AI policy (#1366)
 - Support POST requests to OSRM using `-r osrm_post` (#1365)
 

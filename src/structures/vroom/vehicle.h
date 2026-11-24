@@ -69,6 +69,10 @@ struct Vehicle {
   Index type;
   const std::string type_str;
   std::unordered_map<Id, Index> break_id_to_rank;
+  // True when neither start nor end is provided in input. Start and
+  // end are then both set to a zero-cost virtual location once
+  // matrices are known.
+  bool virtual_ends{false};
 
   Vehicle(
     Id id,

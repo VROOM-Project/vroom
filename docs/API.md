@@ -181,12 +181,15 @@ If no custom matrix is provided:
 
 ### `vehicle` locations
 
-- key `start` and `end` are optional for a `vehicle`, as long as at
-  least one of them is present
+- key `start` and `end` are optional for a `vehicle`
 - if `end` is omitted, the resulting route will stop at the last
   visited task, whose choice is determined by the optimization process
 - if `start` is omitted, the resulting route will start at the first
   visited task, whose choice is determined by the optimization process
+- if both `start` and `end` are omitted, the resulting route will
+  start at the first visited task and stop at the last visited task,
+  both chosen by the optimization process; the `start` and `end` steps
+  in output then report the location of those tasks
 - to request a round trip, just specify both `start` and `end` with
   the same coordinates
 - depending on if custom matrices are provided, required fields follow
