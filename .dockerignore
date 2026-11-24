@@ -1,0 +1,7 @@
+.git
+.github
+bin
+**/*.o
+**/*.d
+libvroom_examples
+docs
