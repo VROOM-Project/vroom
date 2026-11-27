@@ -1342,8 +1342,14 @@ void LocalSearch<Route,
         Index end_t_rank = _sol[source].size() - 1;
         const auto end_s_next =
           _sol_state.weak_insertion_ranks_end[source][s_next_job_rank];
-        assert(end_s_next > 1);
-        end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s_next - 2));
+
+        // In rare cases, end_s_next can be lower than s_rank + 1, so
+        // in particular lower or equal to 1, see #1341. In that
+        // situation t_rank_weak_bound will discard options from the
+        // following loop.
+        const auto t_rank_weak_bound =
+          (end_s_next > 1) ? static_cast<Index>(end_s_next - 2) : end_s_next;
+        end_t_rank = std::min(end_t_rank, t_rank_weak_bound);
 
         for (unsigned t_rank = s_rank + 3; t_rank < end_t_rank; ++t_rank) {
           const auto& job_t_type = _input.jobs[_sol[target].route[t_rank]].type;

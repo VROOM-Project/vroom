@@ -22,6 +22,7 @@
 
 - Segfault with geometry request with plan mode and user-defined matrices (#1334)
 - Out-of-bounds read in `PriorityReplace` (#1348)
+- Incorrect assert in situation breaking the triangle inequality (#1341)
 
 #### Internals
 
